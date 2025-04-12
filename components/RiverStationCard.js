@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Droplet, Thermometer, Wind, Clock, RefreshCw, ExternalLink } from 'lucide-react';
@@ -163,7 +163,10 @@ export default function RiverStationCard({ stationId, stationName, riverName }) 
   });
   
   return (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-4 h-full border border-gray-700 card-glow">
+    <div 
+      id={`station-${stationId}`}
+      className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-4 h-full border border-gray-700 card-glow"
+    >
       <div className="flex justify-between items-start mb-2">
         <div>
           <h3 className="font-bold text-lg text-blue-300">{stationName}</h3>
