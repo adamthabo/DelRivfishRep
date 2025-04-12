@@ -2,21 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Google Fonts - Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+/* Google Fonts - Inter and Orbitron */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap');
 
 /* Custom styles */
 html {
   scroll-behavior: smooth;
 }
 
-/* Tooltip styles for charts */
+body {
+  overflow-x: hidden;
+}
+
+/* High-tech background */
+.dashboard-background {
+  background-color: #0f172a;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(10, 37, 64, 0.4) 0%, transparent 40%),
+    radial-gradient(circle at 75% 75%, rgba(16, 66, 125, 0.3) 0%, transparent 40%),
+    linear-gradient(to bottom, #0f172a 0%, #131f36 100%);
+  background-attachment: fixed;
+  position: relative;
+}
+
+/* Header styling */
+.dashboard-header {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Grid lines overlay */
+.dashboard-background::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Component styling */
+.card-glow {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+  transition: box-shadow 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.25);
+}
+
+.glow-button {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+  transition: all 0.3s ease;
+}
+
+.glow-button:hover {
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
+}
+
+/* Font classes */
+.font-orbitron {
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* Chart styling */
 .recharts-tooltip-wrapper {
-  @apply shadow-lg rounded overflow-hidden;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7)) !important;
 }
 
 .recharts-default-tooltip {
-  @apply bg-white border-none rounded shadow-none !important;
+  @apply bg-gray-800 border-gray-700 rounded-md !important;
+  color: #e2e8f0 !important;
+}
+
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  @apply stroke-gray-700 !important;
+}
+
+.recharts-cartesian-axis-line {
+  @apply stroke-gray-600 !important;
+}
+
+.recharts-cartesian-axis-tick-value {
+  @apply fill-gray-400 !important;
+}
+
+.recharts-legend-item-text {
+  @apply fill-gray-300 !important;
 }
 
 /* Status indicators */
@@ -33,12 +115,32 @@ html {
 }
 
 .status-unknown {
-  @apply bg-gray-300;
+  @apply bg-gray-600;
+}
+
+/* Loading animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Responsive adjustments for mobile */
 @media (max-width: 640px) {
   .recharts-legend-wrapper {
     @apply bottom-0 !important;
+  }
+  
+  .dashboard-background::before {
+    background-size: 20px 20px;
   }
 }
