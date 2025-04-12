@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Custom styles */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Tooltip styles for charts */
+.recharts-tooltip-wrapper {
+  @apply shadow-lg rounded overflow-hidden;
+}
+
+.recharts-default-tooltip {
+  @apply bg-white border-none rounded shadow-none !important;
+}
+
+/* Status indicators */
+.status-normal {
+  @apply bg-green-500;
+}
+
+.status-high {
+  @apply bg-orange-500;
+}
+
+.status-low {
+  @apply bg-blue-500;
+}
+
+.status-unknown {
+  @apply bg-gray-300;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 640px) {
+  .recharts-legend-wrapper {
+    @apply bottom-0 !important;
+  }
+}
