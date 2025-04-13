@@ -1,28 +1,14 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import Head from 'next/head';
-import { MapPin, Droplet, Thermometer, Wind, AlertTriangle, Fish, Clock, RefreshCw, BarChart3 } from 'lucide-react';
+import { Droplet, Fish, Clock, RefreshCw, BarChart3, Waves } from 'lucide-react';
 
-// Import components directly (no dynamic import for the map to ensure it works)
+// Import components directly
 import RiverMap from '../components/RiverMap';
 import RiverStationCard from '../components/RiverStationCard';
 import WeatherForecast from '../components/WeatherForecast';
 import FishingReports from '../components/FishingReports';
 import RiverAlerts from '../components/RiverAlerts';
-
-// SWR fetcher function
-const fetcher = async (url) => {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error('Failed to fetch data');
-    }
-    return res.json();
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    return null; // Return null on error to trigger fallback
-  }
-};
 
 // Updated mock station data with the correct rivers
 const MOCK_STATIONS = [
@@ -36,6 +22,20 @@ const MOCK_STATIONS = [
   { id: "01365000", name: "Willowemoc Creek near Livingston Manor, NY", lat: 41.9026, lng: -74.8004, river: "Willowemoc" }
 ];
 
+// SWR fetcher function with simple error handling
+const fetcher = async (url) => {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error('Failed to fetch data');
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return null; // Return null on error to trigger fallback
+  }
+};
+
 // Main Dashboard Component
 export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -48,8 +48,8 @@ export default function Dashboard() {
     { 
       refreshInterval: 30 * 60 * 1000, // 30 minutes
       fallbackData: MOCK_STATIONS, // Always use mock data as a fallback
-      shouldRetryOnError: true,
-      errorRetryCount: 3
+      suspense: false,
+      revalidateOnFocus: false
     }
   );
   
@@ -87,21 +87,21 @@ export default function Dashboard() {
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet" />
       </Head>
       
-      <header className="dashboard-header py-4 px-6 shadow-lg">
+      <header className="dashboard-header py-4 px-6 shadow-xl border-b border-blue-900/30">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row md:justify-between md:items-center">
             <h1 className="text-2xl md:text-3xl font-orbitron text-blue-400 flex items-center">
-              <BarChart3 className="mr-2 text-blue-500" />
+              <Waves className="mr-3 text-blue-500" />
               Delaware River Dashboard
             </h1>
             <div className="flex items-center mt-2 md:mt-0">
-              <span className="text-sm mr-4 bg-gray-800/60 px-3 py-1 rounded-full flex items-center">
+              <span className="text-sm mr-4 bg-gray-800/70 px-3 py-1 rounded-full flex items-center border border-gray-700/50 shadow-inner">
                 <Clock size={14} className="mr-1 text-blue-400" />
                 Updated: {lastUpdated.toLocaleTimeString()}
               </span>
               <button 
                 onClick={refreshData}
-                className="bg-blue-700 hover:bg-blue-600 text-white py-1 px-3 rounded-full flex items-center text-sm transition-all glow-button"
+                className="bg-blue-700 hover:bg-blue-600 text-white py-1 px-3 rounded-full flex items-center text-sm transition-all glow-button shadow-lg"
               >
                 <RefreshCw size={14} className="mr-1" /> Refresh
               </button>
@@ -114,7 +114,7 @@ export default function Dashboard() {
               <select 
                 value={selectedRiver}
                 onChange={(e) => setSelectedRiver(e.target.value)}
-                className="bg-gray-800 text-white rounded-md px-2 py-1 border border-gray-700"
+                className="bg-gray-800 text-white rounded-md px-2 py-1 border border-gray-700 shadow-inner"
               >
                 {riverOptions.map((river) => (
                   <option key={river} value={river}>
@@ -126,13 +126,13 @@ export default function Dashboard() {
             
             <div className="flex items-center">
               <span className="flex items-center mr-3">
-                <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2" /> Normal
+                <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2 shadow-sm" /> Normal
               </span>
               <span className="flex items-center mr-3">
-                <span className="inline-block w-3 h-3 rounded-full bg-orange-500 mr-2" /> High
+                <span className="inline-block w-3 h-3 rounded-full bg-orange-500 mr-2 shadow-sm" /> High
               </span>
               <span className="flex items-center">
-                <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2" /> Low
+                <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2 shadow-sm" /> Low
               </span>
             </div>
           </div>
@@ -179,6 +179,10 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+        
+        <h2 className="text-xl font-bold mb-4 font-orbitron text-blue-400 flex items-center">
+          <Fish className="mr-2" /> Fishing Reports
+        </h2>
         
         <div className="mb-6">
           <FishingReports />
