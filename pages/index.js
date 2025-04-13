@@ -1,38 +1,27 @@
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import Head from 'next/head';
-import dynamic from 'next/dynamic';
 import { MapPin, Droplet, Thermometer, Wind, AlertTriangle, Fish, Clock, RefreshCw, BarChart3 } from 'lucide-react';
 
-// Import components
+// Import components directly (no dynamic import for the map to ensure it works)
+import RiverMap from '../components/RiverMap';
 import RiverStationCard from '../components/RiverStationCard';
 import WeatherForecast from '../components/WeatherForecast';
 import FishingReports from '../components/FishingReports';
 import RiverAlerts from '../components/RiverAlerts';
 
-// Import Map component dynamically to avoid SSR issues with map libraries
-const RiverMap = dynamic(() => import('../components/RiverMap'), {
-  ssr: false,
-  loading: () => (
-    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-4 h-full border border-gray-700">
-      <h3 className="font-bold text-lg mb-2 text-gray-100">Monitoring Stations</h3>
-      <div className="h-64 bg-gray-800/50 rounded-lg flex items-center justify-center">
-        <p className="text-gray-400">Loading map...</p>
-      </div>
-    </div>
-  )
-});
-
 // SWR fetcher function
 const fetcher = async (url) => {
-  const res = await fetch(url);
-  if (!res.ok) {
-    const error = new Error('An error occurred while fetching the data.');
-    error.info = await res.json();
-    error.status = res.status;
-    throw error;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error('Failed to fetch data');
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return null; // Return null on error to trigger fallback
   }
-  return res.json();
 };
 
 // Updated mock station data with the correct rivers
@@ -52,23 +41,27 @@ export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [selectedRiver, setSelectedRiver] = useState("all");
   
-  // Fetch all stations
+  // Fetch all stations - with fallback to mock data
   const { data: stations, error: stationsError, mutate: mutateStations } = useSWR(
     '/api/stations',
     fetcher,
-    { refreshInterval: 30 * 60 * 1000, // 30 minutes
-      fallbackData: MOCK_STATIONS } 
+    { 
+      refreshInterval: 30 * 60 * 1000, // 30 minutes
+      fallbackData: MOCK_STATIONS, // Always use mock data as a fallback
+      shouldRetryOnError: true,
+      errorRetryCount: 3
+    }
   );
   
   // Filter stations by selected river
   const filteredStations = selectedRiver === "all" 
-    ? stations 
-    : stations?.filter(s => s.river === selectedRiver) || [];
+    ? stations || MOCK_STATIONS // Ensure we always have stations data
+    : (stations || MOCK_STATIONS).filter(s => s.river === selectedRiver);
   
   // Get unique river names for filter
   const riverOptions = stations 
     ? ["all", ...new Set(stations.map(s => s.river))]
-    : ["all"];
+    : ["all", ...new Set(MOCK_STATIONS.map(s => s.river))];
     
   const refreshData = () => {
     // Trigger SWR revalidation
@@ -115,43 +108,41 @@ export default function Dashboard() {
             </div>
           </div>
           
-          {stations && (
-            <div className="flex flex-wrap mt-4 text-sm">
-              <div className="mr-4 mb-2">
-                <span className="mr-2 text-blue-300">Filter by river:</span>
-                <select 
-                  value={selectedRiver}
-                  onChange={(e) => setSelectedRiver(e.target.value)}
-                  className="bg-gray-800 text-white rounded-md px-2 py-1 border border-gray-700"
-                >
-                  {riverOptions.map((river) => (
-                    <option key={river} value={river}>
-                      {river === "all" ? "All Rivers" : river}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <div className="flex items-center">
-                <span className="flex items-center mr-3">
-                  <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2" /> Normal
-                </span>
-                <span className="flex items-center mr-3">
-                  <span className="inline-block w-3 h-3 rounded-full bg-orange-500 mr-2" /> High
-                </span>
-                <span className="flex items-center">
-                  <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2" /> Low
-                </span>
-              </div>
+          <div className="flex flex-wrap mt-4 text-sm">
+            <div className="mr-4 mb-2">
+              <span className="mr-2 text-blue-300">Filter by river:</span>
+              <select 
+                value={selectedRiver}
+                onChange={(e) => setSelectedRiver(e.target.value)}
+                className="bg-gray-800 text-white rounded-md px-2 py-1 border border-gray-700"
+              >
+                {riverOptions.map((river) => (
+                  <option key={river} value={river}>
+                    {river === "all" ? "All Rivers" : river}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+            
+            <div className="flex items-center">
+              <span className="flex items-center mr-3">
+                <span className="inline-block w-3 h-3 rounded-full bg-green-500 mr-2" /> Normal
+              </span>
+              <span className="flex items-center mr-3">
+                <span className="inline-block w-3 h-3 rounded-full bg-orange-500 mr-2" /> High
+              </span>
+              <span className="flex items-center">
+                <span className="inline-block w-3 h-3 rounded-full bg-blue-500 mr-2" /> Low
+              </span>
+            </div>
+          </div>
         </div>
       </header>
       
       <main className="container mx-auto py-6 px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="md:col-span-2">
-            <RiverMap stations={stations || []} />
+            <RiverMap stations={filteredStations} />
           </div>
           <div>
             <WeatherForecast />
@@ -166,42 +157,28 @@ export default function Dashboard() {
           <Droplet className="mr-2" /> River Conditions
         </h2>
         
-        {stationsError && (
+        {stationsError && !stations && (
           <div className="bg-red-900/50 text-red-200 p-4 rounded-lg mb-4 border border-red-700">
-            Error loading station data. Please try again later.
+            Error loading station data. Using backup data instead.
           </div>
         )}
         
-        {!stations && !stationsError && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {[1, 2, 3, 4, 5, 6].map((placeholder) => (
-              <div key={placeholder} className="bg-gray-800/40 rounded-lg shadow-lg p-4 h-full animate-pulse border border-gray-700">
-                <div className="h-4 bg-gray-700 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-700 rounded w-1/2 mb-4"></div>
-                <div className="h-40 bg-gray-700 rounded mb-4"></div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {stations && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {filteredStations.length > 0 ? (
-              filteredStations.map(station => (
-                <RiverStationCard 
-                  key={station.id}
-                  stationId={station.id}
-                  stationName={station.name}
-                  riverName={station.river}
-                />
-              ))
-            ) : (
-              <div className="col-span-full text-center py-8 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700">
-                No stations found for the selected river.
-              </div>
-            )}
-          </div>
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          {filteredStations.length > 0 ? (
+            filteredStations.map(station => (
+              <RiverStationCard 
+                key={station.id}
+                stationId={station.id}
+                stationName={station.name}
+                riverName={station.river}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-8 text-gray-400 bg-gray-800/30 rounded-lg border border-gray-700">
+              No stations found for the selected river.
+            </div>
+          )}
+        </div>
         
         <div className="mb-6">
           <FishingReports />
